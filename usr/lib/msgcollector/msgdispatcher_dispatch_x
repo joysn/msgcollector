@@ -2,87 +2,52 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4 import QtCore, QtGui
+import re
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
     _fromUtf8 = lambda s: s
 
+# Declare your own MessageBox to make it resizeable
+class MyMessageBox(QtGui.QMessageBox):
+    def __init__(self):
+        QtGui.QMessageBox.__init__(self)
+        self.setSizeGripEnabled(True)
+
+    def event(self, e):
+        result = QtGui.QMessageBox.event(self, e)
+
+        self.setMinimumHeight(200)
+        self.setMaximumHeight(16777215)
+        self.setMinimumWidth(800)
+        self.setMaximumWidth(16777215)
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+
+        textEdit = self.findChild(QtGui.QTextEdit)
+        if textEdit != None :
+            textEdit.setMinimumHeight(0)
+            textEdit.setMaximumHeight(16777215)
+            textEdit.setMinimumWidth(0)
+            textEdit.setMaximumWidth(16777215)
+            textEdit.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        return result
+      
+
 class Ui_Dialog(object):
-    def setupUi(self, Dialog):
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHeightForWidth(Dialog.sizePolicy().hasHeightForWidth())
-        Dialog.setSizePolicy(sizePolicy)
-        Dialog.setWindowIcon(QtGui.QIcon(icon))
+    def setupUi(self, QMessageBox):
         if pos == "1":
-            Dialog.move(0,  0)
+            QMessageBox.move(0,  0)
 
-        self.gridLayout = QtGui.QGridLayout(Dialog)
+        QMessageBox.setStandardButtons(QMessageBox.Ok)
+        self.retranslateUi(QMessageBox)
 
-        self.Info_Icon = QtGui.QLabel(Dialog)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Preferred)
-        sizePolicy.setHeightForWidth(self.Info_Icon.sizePolicy().hasHeightForWidth())
-        self.Info_Icon.setSizePolicy(sizePolicy)
-        self.Info_Icon.setPixmap(QtGui.QPixmap(itype))
-        self.Info_Icon.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
-        self.gridLayout.addWidget(self.Info_Icon, 0, 0, 1, 1)
-
-        self.Message = QtGui.QTextBrowser(Dialog)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHeightForWidth(self.Message.sizePolicy().hasHeightForWidth())
-        self.Message.setSizePolicy(sizePolicy)
-        self.Message.setMinimumSize(QtCore.QSize(715, 0))
-        self.Message.setFrameShape(QtGui.QFrame.StyledPanel)
-        palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
-        brush = QtGui.QBrush(QtGui.QColor(244, 244, 244))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
-        self.Message.setPalette(palette)
-        self.Message.setTextInteractionFlags(QtCore.Qt.LinksAccessibleByMouse | QtCore.Qt.TextSelectableByMouse)
-        self.Message.setOpenExternalLinks(True)
-        self.Message.setFrameShape(QtGui.QFrame.NoFrame)
-        self.gridLayout.addWidget(self.Message, 0, 1, 1, 2)
-
-        self.buttonBox = QtGui.QDialogButtonBox(Dialog)
-        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Ok)
-        self.gridLayout.addWidget(self.buttonBox, 1, 1, 1, 1)
-
-        self.retranslateUi(Dialog)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Dialog.reject)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
-
-    def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(QtGui.QApplication.translate("Dialog", title, None, QtGui.QApplication.UnicodeUTF8))
-        self.Message.setHtml(QtGui.QApplication.translate("Dialog", msg, None, QtGui.QApplication.UnicodeUTF8))
-        ## Size is not readily available, so, create a signal
-        QtCore.QTimer.singleShot(0, self.setSize)
-
-    def setSize(self):
-        ## Size is returned
-        messageHeight = self.Message.document().size().height()
-        maximumHeight = QtGui.QDesktopWidget().availableGeometry().height() - 25
-        if messageHeight <= maximumHeight:
-            Dialog.resize(830, messageHeight + 55)
-            self.center()
-        else:
-            Dialog.resize(830, maximumHeight)
-            self.center()
-
-    def center(self):
-       frameGm = Dialog.frameGeometry()
-       centerPoint = QtGui.QDesktopWidget().availableGeometry().center()
-       frameGm.moveCenter(centerPoint)
-       Dialog.move(frameGm.topLeft())
-
-
+    def retranslateUi(self, QMessageBox):
+        QMessageBox.setWindowTitle(QtGui.QApplication.translate("Dialog", title, None, QtGui.QApplication.UnicodeUTF8))
+        QMessageBox.setText(msg_short)
+        QMessageBox.setTextFormat(QtCore.Qt.RichText)
+        QMessageBox.setDetailedText(msg_detail)
+        
 if __name__ == "__main__":
     import sys
     import signal
@@ -100,16 +65,20 @@ msgdispatcher_dispatch_x requires 4 manadatory and 1 optional arguments
     if len(sys.argv) < 5:
        sys.exit("'msgdispatcher_dispatch_x'. Invalid number of options {}".format(syntax_details))  
     app = QtGui.QApplication(sys.argv)
-    Dialog = QtGui.QDialog()
+    qm = QtGui.QMessageBox()
+    QMessageBox = MyMessageBox()
 
+    # We will use the default QMessageBox icons instead of
+    # /usr/share/icons/oxygen/64x64/status/dialog-information.png
+    # /usr/share/icons/oxygen/64x64/status/dialog-warning.png
+    # /usr/share/icons/oxygen/64x64/status/dialog-error.png
     if str(sys.argv[1]) == "info":
-        itype = "/usr/share/icons/oxygen/64x64/status/dialog-information.png"
+        QMessageBox.setIcon(QMessageBox.Information)
     elif str(sys.argv[1]) == "warning":
-        itype = "/usr/share/icons/oxygen/128x128/status/dialog-warning.png"
+        QMessageBox.setIcon(QMessageBox.Warning)
     elif str(sys.argv[1]) == "error":
-        itype = "/usr/share/icons/oxygen/128x128/status/dialog-error.png"
+        QMessageBox.setIcon(QMessageBox.Critical)
     else:
-        itype =""
         sys.exit("'msgdispatcher_dispatch_x'. Information type not recognized: %s" % str(sys.argv[1]))
 
     title = str(sys.argv[2])
@@ -118,9 +87,21 @@ msgdispatcher_dispatch_x requires 4 manadatory and 1 optional arguments
     icon = "/path/to/optional/icon"
     if len(sys.argv) == 6:
         icon = str(sys.argv[5])
-
+        QMessageBox.setIconPixmap(QtGui.QPixmap(icon))
+        
+    # Break only if the string "Possible issue:" is present in the error message
+    if "Possible issues:" in msg:
+        msg_short = msg.split('Possible issues:')[0]
+        msg_detail = "Possible issues:\n"+msg.split('Possible issues:')[1]
+    else: # Else show everything at one shot
+        msg_short = msg
+        msg_detail = "No details present"
+   
+    # Remove all html tags in a Non-Greedy way
+    msg_detail = re.sub('<.*?>','',msg_detail)
+    
     ui = Ui_Dialog()
-    ui.setupUi(Dialog)
-    Dialog.show()
+    ui.setupUi(QMessageBox)
+    QMessageBox.show()
     sys.exit(app.exec_())
 
